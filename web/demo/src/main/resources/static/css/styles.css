@@ -1,0 +1,37 @@
+body {
+    font-family: Bookman, URW Bookman L, serif;
+}
+
+body#index{
+    background-image: url("../images/background-index.jpg");
+}
+
+body#setSchedule{
+    color: white;
+    background-image: url("../images/background-setSchedule.jpg");
+}
+
+body#contactUs{
+    background-image: url("../images/background-contactUs.jpg");
+}
+a {
+    text-decoration: none;
+}
+
+#main {
+    margin-top: 10px;
+    text-align: -webkit-center;
+}
+#deleteRed {
+    height:36px;
+    cursor: pointer;
+}
+
+.buckinput{
+    display: inline-block;
+    width:150px;
+    height: 38px;
+    margin-right: 5px;
+    padding: 5px;
+}
+

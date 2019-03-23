@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style>
+        #map {
+            height: 100%;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="header">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Lokidor</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="setSchedule">Set Schedule</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="viewActivity">View Activity <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="reportTrafficking">Report Trafficking</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="contactUs">Contact Us</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+    <!--<p id="pathInfo" th:text="${hello}" hidden></p>-->
+    <div id="map"></div>
+
+
+<!-- Footer -->
+<footer class="page-footer font-small bg-light pt-4 fixed-bottom">
+
+    <!-- Footer Elements -->
+    <div class="container">
+
+        <!-- Social buttons -->
+        <ul class="list-unstyled list-inline text-center">
+            <li class="list-inline-item">
+                <a class="btn-floating btn-fb mx-1" href="https://www.facebook.com/martin.yang.167189">
+                    <i class="fab fa-facebook-f"> </i>
+                </a>
+            </li>
+            <li class="list-inline-item">
+                <a class="btn-floating btn-tw mx-1" href="https://twitter.com/SuperMartinYang">
+                    <i class="fab fa-twitter"> </i>
+                </a>
+            </li>
+            <li class="list-inline-item">
+                <a class="btn-floating btn-gplus mx-1" href="https://plus.google.com/u/0/113631933804634612497?tab=kX">
+                    <i class="fab fa-google-plus-g"> </i>
+                </a>
+            </li>
+            <li class="list-inline-item">
+                <a class="btn-floating btn-li mx-1" href="https://www.linkedin.com/in/supermartinyang/">
+                    <i class="fab fa-linkedin-in"> </i>
+                </a>
+            </li>
+            <li class="list-inline-item">
+                <a class="btn-floating btn-dribbble mx-1" href="#">
+                    <i class="fab fa-dribbble"> </i>
+                </a>
+            </li>
+        </ul>
+        <!-- Social buttons -->
+
+    </div>
+    <!-- Footer Elements -->
+
+    <!-- Copyright -->
+    <div class="footer-copyright bg-secondary text-center py-3">© 2018 Copyright:
+        <a href="/" style="color:white"> lokidor.com</a>
+    </div>
+    <!-- Copyright -->
+
+</footer>
+<!-- Footer -->
+    <script src="js/markerclusterer.js"></script>
+    <script th:inline="javascript">
+        // get the map
+//        var path = [[${path}]];
+        var path = [];
+        var sensitiveLoc = [[${sensitiveLoc}]];
+        var showPoints = [];
+        var markers = [];
+        var map;
+        function getPath(){
+            console.log("GetPath");
+            return $.ajax({
+                type: "GET",
+                url: "/getPath",
+                dataType: "JSON",
+                success: function(data){
+                    path = data;
+                    console.log("getPath: ", path);
+                }
+            })
+        }
+        function main(){
+            initMap();
+            setInterval(addOn, 5000);
+        }
+        function initMap() {
+            console.log(path);
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 10,
+                center: {lat: 40.4425525, lng: -79.95411380000002}
+            });
+            drawSensitivityHeatMap();
+
+            // draw cluster here
+            console.log("----------------------------------------------------------------------")
+        }
+
+        function addOn(){
+            getPath().then(function(x){
+                cleanMarkers();
+                drawMarker();
+                drawLines();
+            });
+        }
+
+        function cleanMarkers(){
+            for (var i = 0; i < markers.length; i++){
+                markers[i].setMap(null);
+            }
+            markers = [];
+            drawCluster();
+        }
+
+        function drawSensitivityHeatMap(){
+            console.log(sensitiveLoc);
+            heatmap = new google.maps.visualization.HeatmapLayer({
+                data: getPoints(),
+                map: map
+            })
+        }
+
+        function getPoints(){
+            var locs = sensitiveLoc.map(function(s, i){
+                return new google.maps.LatLng(s.lat, s.lon);
+            });
+            console.log(locs);
+            return locs;
+        }
+        function toggleHeatmap() {
+            heatmap.setMap(heatmap.getMap() ? null : map);
+        }
+
+        function changeGradient() {
+            var gradient = [
+                'rgba(0, 255, 255, 0)',
+                'rgba(0, 255, 255, 1)',
+                'rgba(0, 191, 255, 1)',
+                'rgba(0, 127, 255, 1)',
+                'rgba(0, 63, 255, 1)',
+                'rgba(0, 0, 255, 1)',
+                'rgba(0, 0, 223, 1)',
+                'rgba(0, 0, 191, 1)',
+                'rgba(0, 0, 159, 1)',
+                'rgba(0, 0, 127, 1)',
+                'rgba(63, 0, 91, 1)',
+                'rgba(127, 0, 63, 1)',
+                'rgba(191, 0, 31, 1)',
+                'rgba(255, 0, 0, 1)'
+            ];
+            heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
+        }
+
+        function changeRadius() {
+            heatmap.set('radius', heatmap.get('radius') ? null : 20);
+        }
+
+        function changeOpacity() {
+            heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
+        }
+
+        function drawSensitivityArea() {
+            // draw trafficking
+            console.log(sensitiveLoc);
+            for (var i = 0; i < sensitiveLoc.length; i ++) {
+                var sLoc = sensitiveLoc[i];
+                console.log("" + sLoc.lat + " -- " + sLoc.lon);
+                var sensitiveCircle = new google.maps.Circle({
+                    strokeColor: "#FF0000",
+                    strokeCapacity: 0.8,
+                    strokeWeight: 2,
+                    fillColor: "#FF0000",
+                    fillOpacity: 0.35,
+                    map: map,
+                    center: {"lat": sLoc.lat, "lng": sLoc.lon},
+                    radius: sLoc.sensitivity * 100
+                });
+            }
+        }
+
+        function drawLines() {
+            // partially connect
+            // define a connect symbol
+            var lineSymbol = {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW
+            };
+            var points = [];
+            var line;
+            for (var i = 0; i <= path.length; i++) {
+                var item;
+                // bound check
+                if (i == path.length){
+                    item = {"lat": 0, "lon": 0, "priority": 0, "show": false};
+                } else {
+                    item = path[i];
+                }
+                console.log('' + item.lat + ' -- ' + item.lon);
+                if (item.show){
+                    points.push({"lat":item.lat, "lng":item.lon});
+                    console.log("Priority for lat: " + item.lat + ", lon: " + item.lon + " is " + Math.floor(item.priority / 0.33));
+                } else if (points.length > 0){
+                    // draw line and empty points
+                    line = new google.maps.Polyline({
+                        path: points,
+                        icons: [{
+                            icon: lineSymbol,
+                            offset: "100%"
+                        }],
+                        map: map
+                    });
+//                    line = null;
+                    points = [];
+                }
+            }
+        }
+
+        function drawCluster(){
+            var markerCluster = new MarkerClusterer(map, markers,
+                {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+        }
+
+        function drawMarker(){
+            for (var i = 0; i < path.length; i ++){
+                if (path[i].show){
+                    showPoints.push(path[i]);
+                }
+            }
+            console.log("DrawMarker path: ", path);
+            // based on priority, we get different image from google
+            // priority 0 - 0.33, 0 - 0.66, 0.67 - 1
+            var imageUrls = ['http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=FFFFFF,00FF00,000000&ext=.png',
+                'http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=FFFFFF,FFFF00,000000&ext=.png',
+                'http://chart.apis.google.com/chart?cht=mm&chs=24x32&chco=FFFFFF,FF0000,000000&ext=.png'];
+            var markerImages = [];
+            for (var i = 0; i < imageUrls.length; i ++){
+                markerImages.push(new google.maps.MarkerImage(imageUrls[i], new google.maps.Size(24, 32)));
+            }
+
+            markers = showPoints.map(function (p, i) {
+                console.log("showPoints to the map: ", p);
+                return new google.maps.Marker({
+                    position: {"lat": p.lat, "lng": p.lon},
+//                    label: i + "",
+//                    animation: google.maps.Animation.DROP,
+                    icon: markerImages[Math.floor(p.priority / 0.33)]
+                });
+            });
+
+            drawCluster();
+        }
+    </script>
+    <<script async defer
+             src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmaEuCil6560LPAF6qVqn-wnDCdmVMWK0&libraries=visualization&callback=main">
+    </script>
+</body>
+</html>
